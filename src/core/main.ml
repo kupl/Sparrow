@@ -99,7 +99,7 @@ let main () =
     |> opt !Options.opt_cfg print_cfg
     |> extract_feature
     |> StepManager.stepf true "Itv Sparse Analysis" ItvAnalysis.do_analysis
-    |> StepManager.stepf !Options.opt_smt "SMT-based Alarm Verification" smt_analysis
+    |> StepManager.stepf_opt !Options.opt_smt true "SMT-based Alarm Verification" smt_analysis
     |> cond !Options.opt_oct octagon_analysis (fun (_,_,_,alarm) -> alarm)
     |> Report.print
     |> finish t0
