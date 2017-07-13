@@ -38,6 +38,8 @@ sig
   val add_absloc        : node -> Loc.t -> node -> t -> t
   val add_abslocs       : node -> PowLoc.t -> node -> t -> t
 
+  val project           : t -> node BatSet.t -> t
+
 (** {2 Iterator } *)
 
   val fold_node         : (node -> 'a -> 'a) -> t -> 'a -> 'a
@@ -124,12 +126,20 @@ struct
   =fun src xs dst dug ->
     if PowLoc.is_empty xs then dug else
     G.modify_edge_def xs dug src dst (PowLoc.union xs)
-  
+
+ 
   let fold_node = G.fold_vertex
   let fold_edges = G.fold_edges
   let iter_edges = G.iter_edges
   let fold_succ = G.fold_succ 
 
+  let project : t -> node BatSet.t -> t
+  =fun dug nodes -> 
+    fold_edges (fun src dst dug -> 
+      if BatSet.mem src nodes && BatSet.mem dst nodes then dug
+      else remove_edge src dst dug
+    ) dug dug
+ 
   let nb_loc dug = 
     fold_edges (fun src dst size ->
       PowLoc.cardinal (get_abslocs src dst dug) + size

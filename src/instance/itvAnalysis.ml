@@ -321,17 +321,20 @@ let get_locset mem =
     |> BatSet.fold (fun a -> PowLoc.add (Loc.of_allocsite a)) (Val.allocsites_of_val v)
   ) mem PowLoc.empty 
 
-let do_analysis : Global.t -> Global.t * Table.t * Table.t * Report.query list 
-= fun global -> 
-  let _ = prerr_memory_usage () in
+let get_spec global = 
   let locset = get_locset global.mem in
   let locset_fs = PartialFlowSensitivity.select global locset in
   let unsound_lib = UnsoundLib.collect global in
   let unsound_update = (!Options.opt_bugfinder >= 2) in
   let unsound_bitwise = (!Options.opt_bugfinder >= 1) in
-  let spec = { Spec.empty with 
-    Spec.locset; Spec.locset_fs; premem = global.mem; Spec.unsound_lib; 
-    Spec.unsound_update; Spec.unsound_bitwise; } in
+    { Spec.empty with 
+      Spec.locset; Spec.locset_fs; premem = global.mem; Spec.unsound_lib; 
+      Spec.unsound_update; Spec.unsound_bitwise; }
+ 
+let do_analysis : Global.t -> Global.t * Table.t * Table.t * Report.query list 
+= fun global -> 
+  let _ = prerr_memory_usage () in
+  let spec = get_spec global in
   cond !Options.opt_marshal_in marshal_in (Analysis.perform spec) global
   |> opt !Options.opt_marshal_out marshal_out
   |> StepManager.stepf true "Generate Alarm Report" (fun (global,inputof,outputof) -> 

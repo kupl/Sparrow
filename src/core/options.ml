@@ -36,6 +36,9 @@ let opt_oct = ref false
 let opt_pack_impact = ref true
 let opt_pack_manual = ref false
 
+(* SMT verification *)
+let opt_smt = ref false
+
 (* Analyzer *)
 let opt_nobar = ref false
 let opt_narrow = ref false
@@ -93,6 +96,7 @@ let opts =
   ("-pfs", (Arg.Int (fun x -> opt_pfs := x)), "Partial flow-sensitivity -pfs [0-100] (0: flow-insensitive, 100: fully flow-sensitive). default=100");
   ("-pfs_wv", (Arg.String (fun s -> opt_pfs_wv := s)), "Weight vector for flow-sensitivity (e.g., \"0 1 -1 ... \"). Unspecified weights are zeros.");
   ("-oct", (Arg.Set opt_oct), "Do octagon analysis");
+  ("-smt", (Arg.Set opt_smt), "Do SMT-based alarm verification");
   ("-profile", (Arg.Set opt_profile), "Profiler");
   ("-narrow", (Arg.Set opt_narrow), "Do narrowing");
   ("-unsound_loop", (Arg.String (fun s -> opt_unsound_loop := BatSet.add s !opt_unsound_loop)), "Unsound loops");

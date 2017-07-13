@@ -31,6 +31,8 @@ sig
   val add_absloc        : node -> Loc.t -> node -> t -> t
   val add_abslocs       : node -> PowLoc.t -> node -> t -> t
 
+  val project           : t -> node BatSet.t -> t
+
 (** {2 Iterator } *)
 
   val fold_node         : (node -> 'a -> 'a) -> t -> 'a -> 'a

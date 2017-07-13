@@ -30,6 +30,9 @@ val opt_oct : bool ref
 val opt_pack_impact : bool ref
 val opt_pack_manual : bool ref
 
+(** {2 SMT Analysis } *)
+val opt_smt : bool ref
+
 (** {2 Unsoundness } *)
 
 val opt_unsound_loop : string BatSet.t ref
