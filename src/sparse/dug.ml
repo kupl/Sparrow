@@ -135,9 +135,14 @@ struct
 
   let project : t -> node BatSet.t -> t
   =fun dug nodes -> 
+  let dug = 
     fold_edges (fun src dst dug -> 
       if BatSet.mem src nodes && BatSet.mem dst nodes then dug
       else remove_edge src dst dug
+    ) dug dug in
+    fold_node (fun node dug ->
+      if BatSet.mem node nodes then dug 
+      else remove_node node dug
     ) dug dug
  
   let nb_loc dug = 
