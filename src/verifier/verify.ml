@@ -54,10 +54,10 @@ let rec string_of_ae e =
 let rec string_of_formula f =
   match f with
   | True -> "true" | False -> "false" | Not f -> ("not (" ^ string_of_formula f ^")")
-  | Eq (e1, e2)  -> string_of_ae e1 ^ " = " ^ string_of_ae e2
+  | Eq (e1, e2)  -> string_of_ae e1 ^ " = " ^ string_of_ae e2 
   | Lt (e1, e2)  -> string_of_ae e1 ^ " < " ^ string_of_ae e2
   | And (f1, f2) -> string_of_formula f1 ^ " ^ " ^ string_of_formula f2
-  | Or (f1, f2)  -> string_of_formula f1 ^ " v " ^ string_of_formula f2
+  | Or (f1, f2)  -> "(" ^ string_of_formula f1 ^ " v " ^ string_of_formula f2 ^ ")"
 
 let slice_dug : DUGraph.t -> Report.query -> DUGraph.t
 = fun dug query ->
@@ -70,6 +70,30 @@ let slice_dug : DUGraph.t -> Report.query -> DUGraph.t
       ) nodes nodes in
       fix add_preds (BatSet.singleton query.node) in
     DUGraph.project dug reachable
+
+
+(************************************************)
+(* data-flow analysis for constraint generation *)
+(************************************************)
+module DFATable = struct
+  type facts = formula BatSet.t
+  type node = InterCfg.Node.t
+  type t = (node, facts) BatMap.t
+  let empty = BatMap.empty
+  let find : node -> t -> facts 
+  = fun n t -> try BatMap.find n t with _ -> BatSet.empty
+  let add = BatMap.add
+  let add_union : node -> facts -> t -> t 
+  = fun node facts t ->
+    let old = find node t in
+      BatMap.add node (BatSet.union facts old) t
+  let string_of_facts : facts -> string
+  = fun facts -> 
+    BatSet.fold (fun fact str -> str ^ " ^ " ^ string_of_formula fact) facts ""
+  let print t = 
+    BatMap.iter (fun node facts ->
+      prerr_endline (InterCfg.Node.to_string node ^ " |-> " ^ string_of_facts facts)) t
+end
 
 let rec convert_exp : exp -> ae
 = fun exp ->
@@ -103,72 +127,67 @@ let query2vc : Report.query -> ItvAnalysis.Table.t -> formula
     | _ -> True
 
 
-(************************************************)
-(* data-flow analysis for constraint generation *)
-(************************************************)
-module DFATable = struct
-  type facts = formula BatSet.t
-  type node = InterCfg.Node.t
-  type t = (node, facts) BatMap.t
-  let empty = BatMap.empty
-  let find : node -> t -> facts 
-  = fun n t -> try BatMap.find n t with _ -> BatSet.empty
-  let add = BatMap.add
-  let add_union : node -> facts -> t -> t 
-  = fun node facts t ->
-    let old = find node t in
-      BatMap.add node (BatSet.union facts old) t
-  let string_of_facts : facts -> string
-  = fun facts -> 
-    BatSet.fold (fun fact str -> str ^ " ^ " ^ string_of_formula fact) facts ""
-  let print t = 
-    BatMap.iter (fun node facts ->
-      prerr_endline (InterCfg.Node.to_string node ^ " |-> " ^ string_of_facts facts)) t
-end
-
-let set2vc : Global.t -> Cil.lval * Cil.exp -> formula
+(* genset for assignment *)
+let gen_set : Global.t -> Cil.lval * Cil.exp -> DFATable.facts
 = fun global (lv,exp) -> 
-  try Eq (convert_lv lv, convert_exp exp)
-  with ConversionFailure -> True
+  try BatSet.singleton (Eq (convert_lv lv, convert_exp exp))
+  with ConversionFailure -> BatSet.empty
 
-let ext2vc : Global.t -> Cil.lval -> formula
-= fun global lv -> True (* TODO *)
+(* genset for external call *)
+let gen_ext : Global.t -> Cil.lval -> DFATable.facts
+= fun global lv -> BatSet.empty
 
-let alloc2vc : Global.t -> Cil.lval * IntraCfg.Cmd.alloc -> formula
+(* genset for alloc *)
+let gen_alloc : Global.t -> Cil.lval * IntraCfg.Cmd.alloc -> DFATable.facts
 = fun global (lv,alloc) ->
   match lv, alloc with
-  | (Cil.Var vi, NoOffset), Array e -> Eq (Var vi.vname, convert_exp e)
-  | _ -> raise ConversionFailure
+  | (Cil.Var vi, NoOffset), Array e -> BatSet.singleton (Eq (ArrSize (Var vi.vname), convert_exp e))
+  | _ -> BatSet.empty
 
-let assume2vc : Global.t -> Cil.exp -> formula
+(* genset for assume *)
+let gen_assume : Global.t -> Cil.exp -> DFATable.facts
 = fun global exp -> 
   let rec helper exp = 
     match exp with
-    | UnOp (Cil.LNot, exp, _) -> Not (helper exp)
-    | BinOp (Cil.Lt, e1, e2, _) -> Lt (convert_exp  e1, convert_exp e2)
-    | _ -> raise ConversionFailure in (* TODO *)
-  try helper exp 
-  with ConversionFailure -> True
+    | UnOp (Cil.LNot, exp, _) -> BatSet.map (fun fact -> Not fact) (helper exp)
+    | BinOp (Cil.Lt, e1, e2, _) -> BatSet.singleton (Lt (convert_exp  e1, convert_exp e2))
+    | _ -> BatSet.empty in
+    helper exp 
 
-let node2vc : Global.t -> InterCfg.Node.t -> formula
+(* genset for call *)
+let gen_call : Global.t -> (Cil.lval option * Cil.exp * Cil.exp list) -> DFATable.facts
+= fun global (lvo, func, el) ->
+  match lvo, func, el with
+    (* handling phi-function *)
+  | Some (Var vi, NoOffset), Lval (Var f, NoOffset), (Lval (Var a1, NoOffset))::(Lval (Var a2, NoOffset))::tl when f.vname = "phi" -> 
+    BatSet.singleton (Or (Eq (Var vi.vname, Var a1.vname), Eq (Var vi.vname, Var a2.vname)))
+  | _ -> BatSet.empty
+
+let gen_node : Global.t -> InterCfg.Node.t -> DFATable.facts
 = fun global node -> 
   match InterCfg.cmdof global.icfg node with
-  | Cset (lv, exp, _) -> set2vc global (lv,exp) 
-  | Cexternal (lv, _) -> ext2vc global lv
-  | Calloc (lv,alloc,_,_) -> alloc2vc global (lv,alloc)
-  | Cassume (exp,_) -> assume2vc global exp
-  | Cskip -> True
-  | _ -> True
+  | Cset (lv, exp, _) -> gen_set global (lv,exp) 
+  | Cexternal (lv, _) -> gen_ext global lv
+  | Calloc (lv,alloc,_,_) -> gen_alloc global (lv,alloc)
+  | Cassume (exp,_) -> gen_assume global exp
+  | Cskip -> BatSet.empty
+  | Ccall (lv, f, el, _) -> gen_call global (lv, f, el)
+  | _ -> BatSet.empty
 
 let dfa_gen : Global.t -> InterCfg.Node.t -> DFATable.facts
-= fun global node -> BatSet.singleton (node2vc global node)
+= fun global node -> gen_node global node
+
+(* TODO: call SMT solver *)
+let no_contradiction : DFATable.facts -> bool
+= fun facts -> 
+  BatSet.for_all (fun fact -> BatSet.for_all (fun fact' -> fact <> Not fact') facts) facts
 
 let dfa_kill : Global.t -> InterCfg.Node.t -> DFATable.facts -> DFATable.facts
-= fun global node input_facts ->
-  let used_vars = varsof (node2vc global node) in
-  let not_killed fact = BatSet.is_empty (BatSet.intersect (varsof fact) used_vars) in
-  let _ = BatSet.filter not_killed input_facts in
-    input_facts
+= fun global node input_facts -> 
+  let gen = gen_node global node in
+  let facts = BatSet.filter (fun fact -> no_contradiction (BatSet.add fact gen)) input_facts in
+  let facts = BatSet.filter (fun fact -> no_contradiction (BatSet.singleton fact)) facts in
+    facts
 
 let get_input : InterCfg.Node.t -> DUGraph.t -> DFATable.t -> DFATable.facts
 = fun node dug table ->

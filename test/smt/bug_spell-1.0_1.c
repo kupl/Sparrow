@@ -24,6 +24,7 @@ int str_to_nstr(str_t *str)
   {
   while (1) {
     while_continue: /* CIL Label */ ;
+    sparrow_print (pos);
     if (! (pos < str->len)) {
       goto while_break;
     }
