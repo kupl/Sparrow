@@ -44,6 +44,7 @@ let rec string_of_formula f =
   | True -> "true" | False -> "false" | Not f -> ("not (" ^ string_of_formula f ^")")
   | Eq (e1, e2)  -> string_of_ae e1 ^ " = " ^ string_of_ae e2 
   | Lt (e1, e2)  -> string_of_ae e1 ^ " < " ^ string_of_ae e2
+  | Le (e1, e2)  -> string_of_ae e1 ^ " <= " ^ string_of_ae e2
   | And (f1, f2) -> string_of_formula f1 ^ " ^ " ^ string_of_formula f2
   | Or (f1, f2)  -> "(" ^ string_of_formula f1 ^ " v " ^ string_of_formula f2 ^ ")"
 
@@ -219,7 +220,7 @@ let verify : Global.t -> DUGraph.t -> ItvAnalysis.Table.t -> ItvAnalysis.Table.t
   let formula  = generate_vc query global (inputof, outputof) dug_sliced in
   let verified = Z3Solve.solve_vc formula in
   (* print_string (DUGraph.to_dot dug_sliced); *)
-  (if verified then prerr_endline "TRUE SATISFIED"
+  (if verified then prerr_endline "TRUE SATISFIED - FALSE ALARM"
   else prerr_endline "FALSE");
   verified
   

@@ -1,16 +1,3 @@
-open Graph
-open Cil
-open Global
-open InterCfg
-open BasicDom
-open Vocab
-open Frontend
-open IntraCfg
-open ItvDom
-open ItvSem
-open ArrayBlk
-open AlarmExp 
-open Report 
 open VeriSem
 open Z3
 
@@ -26,10 +13,10 @@ let rec ae2vc : Z3.context -> ae -> Z3.Expr.expr
     | Add (e1, e2) -> Z3.Arithmetic.mk_add ctx [(ae2vc ctx e1); (ae2vc ctx e2)]
     | Sub (e1, e2) -> Z3.Arithmetic.mk_sub ctx [(ae2vc ctx e1); (ae2vc ctx e2)]
     | ArrSize (Var s) -> Z3.Expr.mk_const ctx (Z3.Symbol.mk_string ctx s) is
+    | ArrSize _ -> Z3.Boolean.mk_true ctx
 
 let rec form2vc : Z3.context ->  formula -> Z3.Expr.expr
 = fun ctx formula ->
-  let is = Z3.Arithmetic.Integer.mk_sort ctx in
   match formula with
     | True -> Z3.Boolean.mk_true ctx
     | False -> Z3.Boolean.mk_false ctx
@@ -48,12 +35,11 @@ let print_z3_expr : Z3.Expr.expr list -> unit
 let z3_solver : formula list -> Z3.Model.model option
 = fun formulas ->
   let exprs = List.map (form2vc z3ctx) formulas in
-  let exprs_s = List.map (Z3.Expr.to_string) exprs in
-  List.iter prerr_endline exprs_s;
+  print_z3_expr exprs;
   let goal = Z3.Goal.mk_goal z3ctx true false false in
   let solver = Z3.Solver.mk_solver z3ctx None in
   Z3.Goal.add goal exprs;
-  let goal = Z3.Goal.simplify goal None in
+  let goal = Z3.Goal.simplify goal None in	(* Not necessary *)
   Z3.Solver.add solver (Z3.Goal.get_formulas goal);
   ignore (Z3.Solver.check solver []);
   try Z3.Solver.get_model solver with _ -> None
@@ -62,6 +48,6 @@ let solve_vc : formula list -> bool
 = fun formulas -> 
   let result = z3_solver formulas in
   match result with
-  | None -> false (* Solver fails *)
+  | None -> false (* Solver fails/ UNSATISFIABLE *)
   | _ -> true (* SATISFIABLE *)
 
