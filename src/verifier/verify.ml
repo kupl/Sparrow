@@ -10,22 +10,10 @@ open ItvDom
 open ItvSem
 open ArrayBlk
 open AlarmExp 
-open Report 
-
-module Analysis = SparseAnalysis.Make(ItvSem)
-module Table = Analysis.Table
-module Spec = Analysis.Spec
-module AccessAnalysis = AccessAnalysis.Make (AccessSem.Make (ItvSem))
-module DUGraph = Dug.Make (ItvSem.Dom)
-module SsaDug = SsaDug.Make (DUGraph) (AccessAnalysis)
+open Report
+open VeriSem
 
 exception ConversionFailure
-
-(* formulas *)
-type ae = Var of string | Num of int | Mul of ae * ae | Add of ae * ae | Sub of ae * ae | ArrSize of ae | SizeOfE of ae
-type formula = 
-  | True | False | Not of formula | Eq of ae * ae | Lt of ae * ae | Le of ae * ae
-  | And of formula * formula | Or of formula * formula
 
 let rec varsof : formula -> string BatSet.t
 = fun f -> 
@@ -216,26 +204,25 @@ let perform_dfa : Global.t -> DUGraph.t -> DFATable.t
                      (DFATable.add_union node new_output table) in
     iterate workset table0
 
-let generate_vc : Report.query -> Global.t -> ItvAnalysis.Table.t * ItvAnalysis.Table.t -> DUGraph.t -> formula
+let generate_vc : Report.query -> Global.t -> ItvAnalysis.Table.t * ItvAnalysis.Table.t -> DUGraph.t -> formula list
 = fun query global (inputof, outputof) dug -> 
   let vc_query = query2vc query inputof in
   let table = perform_dfa global dug in
   let facts = get_input query.node dug table in
-  let vc = BatSet.fold (fun fact formula -> And (formula, fact)) facts vc_query in
-  prerr_endline (string_of_formula vc);
+  let vc = BatSet.fold (fun fact formula -> fact::formula) facts [vc_query] in
     vc
-
-let solve_vc : formula -> bool
-= fun formula -> true (* TODO *)
 
 let verify : Global.t -> DUGraph.t -> ItvAnalysis.Table.t -> ItvAnalysis.Table.t -> Report.query -> bool
 = fun global dug inputof outputof query -> 
   prerr_endline ("** verifying " ^ Report.string_of_query query);
   let dug_sliced = slice_dug dug query in
   let formula  = generate_vc query global (inputof, outputof) dug_sliced in
-  let verified = solve_vc formula in
+  let verified = Z3Solve.solve_vc formula in
   (* print_string (DUGraph.to_dot dug_sliced); *)
-    verified
+  (if verified then prerr_endline "TRUE SATISFIED"
+  else prerr_endline "FALSE");
+  verified
+  
 
 let perform : Global.t * ItvAnalysis.Table.t * ItvAnalysis.Table.t * Report.query list -> 
               Global.t * ItvAnalysis.Table.t * ItvAnalysis.Table.t * Report.query list
