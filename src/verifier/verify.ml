@@ -254,12 +254,7 @@ let rec get_pred_nodes : DUGraph.t -> Worklist.t -> node BatSet.t -> node BatSet
 	  BatSet.union pred old_pred) new_pred old_pred in
     new_pred
 *)
-let get_bb : Global.t -> DUGraph.t -> Report.query -> Worklist.t-> unit
-= fun global dug query worklist ->
-  let workset = DUGraph.nodesof dug in
-  let old_pred = BatSet.add query.node BatSet.empty in
-  let new_pred = List.fold_left (fun b l -> BatSet.add l b) old_pred (DUGraph.pred query.node dug) in
-  prerr_endline "hello"
+
 (*    
   let pre = DUGraph.pred query.node dug in
   List.iter (fun f -> prerr_endline (InterCfg.Node.to_string f)) pre;
@@ -292,11 +287,10 @@ let verify : Global.t -> DUGraph.t -> ItvAnalysis.Table.t -> ItvAnalysis.Table.t
   let dug_sliced = slice_dug dug query in
   let worklist = Worklist.init dug_sliced in
   let worklist = Worklist.push_set InterCfg.start_node (DUGraph.nodesof dug_sliced) worklist in
-  let _ = get_bb global dug query worklist in
+  let dug_sliced = get_pred dug_sliced worklist query in
   let formula  = generate_vc query global (inputof, outputof) dug_sliced in
   let verified = Z3Solve.solve_vc formula in
-  let test = get_pred dug_sliced worklist query in
-  print_string (DUGraph.to_dot test);
+  print_string (DUGraph.to_dot dug_sliced);
 (*   print_string (DUGraph.to_dot dug_sliced); *)
   (if verified then prerr_endline "TRUE SATISFIED - FALSE ALARM"
   else prerr_endline "FALSE");
