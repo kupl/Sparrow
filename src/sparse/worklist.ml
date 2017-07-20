@@ -242,4 +242,11 @@ module Make (DUGraph : Dug.S) = struct
       let ws = { ws with set } in
       Some (n, ws)
     with Not_found -> None
+
+  let pick_rev ws =	(* Pick in reversed order *)
+    try
+      let ((_, n) as e, set) = S.pop_max ws.set in
+      let ws = { ws with set } in
+      Some (n, ws)
+    with Not_found -> None
 end
