@@ -19,6 +19,8 @@ sig
   type t
   val init : DUGraph.t -> t
   val pick : t -> (BasicDom.Node.t * t) option
+  val pick_rev : t -> (BasicDom.Node.t * t) option
+  val pop_order : t -> DUGraph.node
   val push : BasicDom.Node.t -> BasicDom.Node.t -> t -> t
   val push_set : BasicDom.Node.t -> BasicDom.Node.t BatSet.t -> t -> t
   val is_loopheader : BasicDom.Node.t -> t -> bool
@@ -249,4 +251,9 @@ module Make (DUGraph : Dug.S) = struct
       let ws = { ws with set } in
       Some (n, ws)
     with Not_found -> None
+
+  let pop_order ws =
+    let dug_map = ws.order.order in
+    let ((du_node, _), dug_map) = BatMap.pop dug_map in
+    du_node    
 end

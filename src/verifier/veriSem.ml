@@ -16,6 +16,7 @@ module Speck = Analysis.Spec
 module AccessAnalysis = AccessAnalysis.Make (AccessSem.Make (ItvSem))
 module DUGraph = Dug.Make (ItvSem.Dom)
 module SsaDug = SsaDug.Make (DUGraph) (AccessAnalysis)
+module Worklist = Worklist.Make (DUGraph)
 
 type ae = Var of string | Num of int | Mul of ae * ae | Add of ae * ae | Sub of ae * ae | ArrSize of ae | SizeOfE of ae
 type formula =

@@ -35,13 +35,13 @@ let print_z3_expr : Z3.Expr.expr list -> unit
 let z3_solver : formula list -> Z3.Model.model option
 = fun formulas ->
   let exprs = List.map (form2vc z3ctx) formulas in
-  print_z3_expr exprs;
+  let _ = print_z3_expr exprs in
   let goal = Z3.Goal.mk_goal z3ctx true false false in
   let solver = Z3.Solver.mk_solver z3ctx None in
-  Z3.Goal.add goal exprs;
+  let _ = Z3.Goal.add goal exprs in
   let goal = Z3.Goal.simplify goal None in	(* Not necessary *)
-  Z3.Solver.add solver (Z3.Goal.get_formulas goal);
-  ignore (Z3.Solver.check solver []);
+  let _ = Z3.Solver.add solver (Z3.Goal.get_formulas goal) in
+  let _ = ignore (Z3.Solver.check solver []) in
   try Z3.Solver.get_model solver with _ -> None
 
 let solve_vc : formula list -> bool
