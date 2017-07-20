@@ -335,6 +335,7 @@ let do_analysis : Global.t -> Global.t * Table.t * Table.t * Report.query list
 = fun global -> 
   let _ = prerr_memory_usage () in
   let spec = get_spec global in
+  let _ = FunctionFeatures.extract spec global (* |> FunctionFeatures.prerr_feature *) in
   cond !Options.opt_marshal_in marshal_in (Analysis.perform spec) global
   |> opt !Options.opt_marshal_out marshal_out
   |> StepManager.stepf true "Generate Alarm Report" (fun (global,inputof,outputof) -> 

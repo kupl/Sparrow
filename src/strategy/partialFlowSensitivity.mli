@@ -8,4 +8,6 @@
 (* See the LICENSE file for details.                                   *)
 (*                                                                     *)
 (***********************************************************************)
+type feature
 val select : Global.t -> BasicDom.PowLoc.t -> BasicDom.PowLoc.t 
+val extract_feature : Global.t -> BasicDom.PowLoc.t -> feature
