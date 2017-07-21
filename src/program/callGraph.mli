@@ -15,6 +15,7 @@ type t
 
 val empty : t
 
+val callers : InterCfg.pid -> t -> BasicDom.PowProc.t
 val callees : InterCfg.pid -> t -> BasicDom.PowProc.t
 val trans_callees : InterCfg.pid -> t -> BasicDom.PowProc.t
 

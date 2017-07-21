@@ -77,8 +77,8 @@ let is_varargs : string -> Cil.file -> bool
     | _ -> b
   ) false
 
-let inline : Global.t -> bool
-=fun global ->
+let get_procs_to_inline : Global.t -> string list 
+= fun global -> 
   let f = global.file in
   let regexps = List.map (fun str -> Str.regexp (".*" ^ str ^ ".*")) !Options.opt_inline in
   let to_inline = 
@@ -88,6 +88,11 @@ let inline : Global.t -> bool
         fd.svar.vname :: to_inline
       | _ -> to_inline
     ) f.globals [] in
+    to_inline
+
+let inline : Global.t -> string list -> bool
+=fun global to_inline ->
+  let f = global.file in
   let varargs_procs = List.filter (fun fid -> is_varargs fid f) to_inline in
   let recursive_procs = List.filter (fun fid -> Global.is_rec fid global) to_inline in
   let large_procs = List.filter (fun fid -> try List.length (InterCfg.nodes_of_pid global.icfg fid) > !Options.opt_inline_size with _ -> false) to_inline in
@@ -96,6 +101,6 @@ let inline : Global.t -> bool
   prerr_endline ("Excluded variable-arguments functions : " ^ Vocab.string_of_list Vocab.id varargs_procs);
   prerr_endline ("Excluded recursive functions : " ^ Vocab.string_of_list Vocab.id recursive_procs);
   prerr_endline ("Excluded too large functions : " ^ Vocab.string_of_list Vocab.id large_procs);
-  Inline.toinline := List.filter (fun fid -> not (List.mem fid to_exclude)) to_inline;
-  Inline.doit f;
+  Inline.toinline := (List.filter (fun fid -> not (List.mem fid to_exclude)) to_inline);
+  Inline.doit global.file;
   not (!Inline.toinline = [])

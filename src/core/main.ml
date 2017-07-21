@@ -16,7 +16,8 @@ open Vocab
 let transform : Global.t -> Global.t 
 = fun global ->
   let loop_transformed = UnsoundLoop.dissolve global in
-  let inlined = Frontend.inline global in
+  let ctxmap = PartialContextSensitivity.gen_ctxmap_default global in
+  let inlined = PartialContextSensitivity.inline global ctxmap in
   if loop_transformed || inlined then   (* something transformed *)
     Frontend.makeCFGinfo global.file    (* NOTE: CFG must be re-computed after transformation *)
     |> StepManager.stepf true "Translation to graphs (after inline)" Global.init
