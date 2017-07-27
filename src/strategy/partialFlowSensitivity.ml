@@ -16,6 +16,7 @@ open ItvDom
 open ItvSem
 open IntraCfg
 open IntraCfg.Cmd
+open Yojson
 
 module AccessSem = AccessSem.Make(ItvSem)
 module AccessAnalysis = AccessAnalysis.Make(AccessSem)
@@ -752,9 +753,16 @@ let get_locs : int -> feature -> locset
   | 42  -> feature.mod_inside_loops 
   | 43  -> feature.used_inside_loops
 
+let load_boolean_formula : string -> int list list
+= fun filename ->
+  let open Yojson.Basic.Util in
+  let data = Yojson.Basic.from_file filename in
+  let formula = List.map (fun conj -> List.map (fun atom -> atom |> to_int) (conj |> to_list)) (data |> to_list) in
+  formula
+
 let select_with_formula : Global.t -> PowLoc.t -> PowLoc.t
 = fun global locset -> 
-  let formula = [ [1]; [2]; [5] ] in
+  let formula = load_boolean_formula "test.json" in
   let feature = extract_feature global locset in
     list_fold (fun clause set ->
       let fun_clause =  (* functions represented by the clause *)
@@ -774,3 +782,4 @@ let select : Global.t -> PowLoc.t -> PowLoc.t
     else
       rank global locset
       |> take_top !Options.opt_pfs
+
