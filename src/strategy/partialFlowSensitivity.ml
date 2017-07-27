@@ -33,9 +33,7 @@ type feature = {
   lvars : locset; (* local variable: done. *)
   lvars_in_G : locset; (* local variables of _G_ : done *)
   fields : locset; (* structure fields : done *)
-  ptr_type : locset; (* TODO *)
   allocsites : locset; (* allocsites : done *)
-  static_array : locset;  (* TODO *)
   ext_allocsites : locset; (* external allocsites : done *)
   single_defs : locset; (* defined at single-site: done.*)
   assign_const : locset; (* e.g. x = (c1 + c2): done. *)
@@ -71,7 +69,6 @@ type feature = {
   used_as_array_index : locset;  (* e.g., arr[x]: done *)
   used_as_array_buf : locset; (* e.g., x[i] : done *)
   mod_in_rec_fun : locset; (* modified inside recursive functions : done *)
-  read_in_rec_fun : locset; (* modified inside recursive functions *) (* TODO *)
   return_from_ext_fun : locset; (* e.g., x = ext_function() : done *) 
   mod_inside_loops : locset; (* while (1) { ... x:= ... } : done *)
   used_inside_loops : locset (* while (1) { ... :=x ... } : done *)
@@ -81,9 +78,7 @@ let empty_feature = {
   gvars = PowLoc.empty;
   lvars = PowLoc.empty;
   fields = PowLoc.empty;
-  ptr_type = PowLoc.empty;
   allocsites = PowLoc.empty;
-  static_array = PowLoc.empty;
   ext_allocsites = PowLoc.empty;
   single_defs = PowLoc.empty;
   assign_const = PowLoc.empty;
@@ -114,7 +109,6 @@ let empty_feature = {
   mul_itself_by_var = PowLoc.empty;
   used_as_array_index = PowLoc.empty;
   mod_in_rec_fun = PowLoc.empty;
-  read_in_rec_fun = PowLoc.empty;
   lvars_in_G = PowLoc.empty;
   dec_itself = PowLoc.empty;
   dec_itself_by_const = PowLoc.empty;
@@ -132,9 +126,7 @@ let prerr_feature feature =
   prerr_endline ("gvars : " ^ l2s feature.gvars);
   prerr_endline ("lvars : " ^ l2s feature.lvars);
   prerr_endline ("fields : " ^ l2s feature.fields);
-  prerr_endline ("ptr_type : " ^ l2s feature.ptr_type);
   prerr_endline ("allocsites : " ^ l2s feature.allocsites);
-  prerr_endline ("static_array : " ^ l2s feature.static_array);
   prerr_endline ("ext_allocsites : " ^ l2s feature.ext_allocsites);
   prerr_endline ("single_def : " ^ l2s feature.single_defs);
   prerr_endline ("assigned_const : " ^ l2s feature.assign_const);
