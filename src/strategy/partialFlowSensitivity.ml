@@ -762,7 +762,7 @@ let load_boolean_formula : string -> int list list
 
 let select_with_formula : Global.t -> PowLoc.t -> PowLoc.t
 = fun global locset -> 
-  let formula = load_boolean_formula "formula.json" in
+  let formula = load_boolean_formula !Options.opt_pfs_formula in
   let feature = extract_feature global locset in
     list_fold (fun clause set ->
       let fun_clause =  (* functions represented by the clause *)
@@ -775,7 +775,7 @@ let select_with_formula : Global.t -> PowLoc.t -> PowLoc.t
 
 let select : Global.t -> PowLoc.t -> PowLoc.t 
 = fun global locset ->
-  if !Options.opt_pfs_formula then select_with_formula global locset 
+  if !Options.opt_pfs_formula <> "" then select_with_formula global locset 
   else
     if !Options.opt_pfs >= 100 then locset
     else if !Options.opt_pfs <= 0 then PowLoc.empty
