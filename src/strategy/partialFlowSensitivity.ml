@@ -695,7 +695,7 @@ let rank : Global.t -> PowLoc.t -> Loc.t list
   let feature = extract_feature global locset in
   let loclist = PowLoc.elements locset in
   let locs_weighted = assign_weight loclist feature weights in
-  let sorted = List.sort (fun (_,w) (_,w') -> compare w' w) locs_weighted in
+  let sorted = (* List.sort (fun (_,w) (_,w') -> compare w' w) *) locs_weighted in
     BatList.map fst sorted
 
 (* take top X-percent-ranked locations, where x : 0 ~ 100 *)
@@ -706,7 +706,7 @@ let take_top : int -> Loc.t list -> PowLoc.t
   PowLoc.of_list (BatList.take _end loclist)
 
 let get_locs : int -> feature -> locset 
-= fun idx feature -> prerr_endline (string_of_int idx);
+= fun idx feature -> 
   match idx with
   | 1   -> feature.gvars
   | 2   -> feature.lvars
@@ -751,10 +751,11 @@ let get_locs : int -> feature -> locset
   | 41  -> feature.return_from_ext_fun
   | 42  -> feature.mod_inside_loops 
   | 43  -> feature.used_inside_loops
+  | _   -> PowLoc.empty
 
 let select_with_formula : Global.t -> PowLoc.t -> PowLoc.t
 = fun global locset -> 
-  let formula = [ [1]; [2]; [5] ] in
+    let formula = [ [2;-4]; ] in
   let feature = extract_feature global locset in
     list_fold (fun clause set ->
       let fun_clause =  (* functions represented by the clause *)
