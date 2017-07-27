@@ -696,7 +696,7 @@ let rank : Global.t -> PowLoc.t -> Loc.t list
   let feature = extract_feature global locset in
   let loclist = PowLoc.elements locset in
   let locs_weighted = assign_weight loclist feature weights in
-  let sorted = (* List.sort (fun (_,w) (_,w') -> compare w' w) *) locs_weighted in
+  let sorted = List.sort (fun (_,w) (_,w') -> compare w' w) locs_weighted in
     BatList.map fst sorted
 
 (* take top X-percent-ranked locations, where x : 0 ~ 100 *)
@@ -707,7 +707,7 @@ let take_top : int -> Loc.t list -> PowLoc.t
   PowLoc.of_list (BatList.take _end loclist)
 
 let get_locs : int -> feature -> locset 
-= fun idx feature -> 
+= fun idx feature -> prerr_endline (string_of_int idx);
   match idx with
   | 1   -> feature.gvars
   | 2   -> feature.lvars
@@ -752,7 +752,6 @@ let get_locs : int -> feature -> locset
   | 41  -> feature.return_from_ext_fun
   | 42  -> feature.mod_inside_loops 
   | 43  -> feature.used_inside_loops
-  | _   -> PowLoc.empty
 
 let load_boolean_formula : string -> int list list
 = fun filename ->
@@ -783,4 +782,14 @@ let select : Global.t -> PowLoc.t -> PowLoc.t
     else
       rank global locset
       |> take_top !Options.opt_pfs
-
+(*
+let print_boomean_formula : int list list -> unit
+= fun formula ->
+  prerr_endline (string_of_list ~first:"" ~last:"" ~sep:"\\/" 
+    (List.map 
+      (fun c -> 
+        let c_str = List.map (fun atom -> string_of_int (atom)) c in
+        string_of_list ~first:"(" ~last:")" ~sep:"/\\" c_str) 
+     formula)
+  )
+*)
