@@ -191,37 +191,11 @@ let get_pred : DUGraph.t -> Worklist.t -> Report.query -> DUGraph.t
 	  ) nodes nodes in
 	fix add_pred (BatSet.singleton query.node) in
       DUGraph.project dug pred_nodes
-(*
-(* ex) (< (+ pos 1) nstr) -> (= pos (+ pos 1)) & (< pos nstr)*)
-let query_node : string -> formula -> DFATable.facts -> string * formula * DFATable.facts
-= fun tmp_s f facts ->
-  match f with
-  | Lt (e1, e2) -> 
-    begin
-      match e1 with
-      | Mul (Var s, ae2) | Add (Var s, ae2) | Sub (Var s, ae2) -> 
-	begin
-	  let query = Lt (Var s, e2) in
-	  let facts = BatSet.add (Eq (Var s, e1)) facts in
-	  (s, query, facts)
-	end
-      | _ -> (tmp_s, f, facts)
-    end
-  | _ -> (tmp_s, f, facts)
-*)
 
 let rec start_nodes : InterCfg.node BatSet.t -> DUGraph.t -> InterCfg.node BatSet.t
 = fun nodes dug ->
   let nodes = BatSet.filter (fun f -> List.length (DUGraph.pred f dug) = 0) nodes in
   nodes
-(*
-let rec make_bp : Report.query -> DFATable.node BatSet.t -> formula list list -> formula list list
-= fun query nodes form_list->
-  let node = BatSet.choose nodes in
-  let nodes = 
-  if (DUGraph.succ node = []) then let nodes = BatSet.remove node nodes 
-  else let nodes = nodes in
-  *)
 
 (* Generate Basic Paths - TOO specific... Need to modify it into general form *)
 let rec make_bp : InterCfg.node -> Report.query -> Global.t -> DUGraph.t -> InterCfg.node BatSet.t -> formula list -> formula list
@@ -247,7 +221,7 @@ let rec make_bp : InterCfg.node -> Report.query -> Global.t -> DUGraph.t -> Inte
   if (List.hd succ) <> query.node then make_bp (List.hd succ) query global dug workset facts
   else facts
 
-let generate_vc : Report.query -> Global.t -> ItvAnalysis.Table.t * ItvAnalysis.Table.t -> DUGraph.t -> (formula list) BatSet.t(*string * formula * formula list *)
+let generate_vc : Report.query -> Global.t -> ItvAnalysis.Table.t * ItvAnalysis.Table.t -> DUGraph.t -> (formula list) BatSet.t
 = fun query global (inputof, outputof) dug -> 
   let vc_query = query2vc query inputof in
   let (table, nodes) = perform_dfa global dug in (* nodes = set of convertable nodes *)
@@ -274,18 +248,6 @@ let generate_vc : Report.query -> Global.t -> ItvAnalysis.Table.t * ItvAnalysis.
 			List.iter (fun g -> prerr_endline (string_of_formula g)) f) sss in*)
   basic_paths
 
-(*
-  let facts = get_input query.node dug table in
-  let vc = BatSet.fold (fun fact formula -> And (formula, fact)) facts vc_query in
-  prerr_endline (string_of_formula vc);
-  vc
-*)
-(*  let s = "" in
-  let (s, vc_query, facts) = query_node s vc_query facts in
-(*  let forms = gen_sp vc_query facts in *)
-  let vc = BatSet.fold (fun fact formulae -> fact::formulae) facts [] in
-    (s, vc_query, vc) *)
-
 let verify : Global.t -> ItvAnalysis.Table.t -> ItvAnalysis.Table.t -> Report.query -> bool
 = fun global inputof outputof query ->
   let spec = ItvAnalysis.get_spec global in
@@ -308,9 +270,6 @@ let verify : Global.t -> ItvAnalysis.Table.t -> ItvAnalysis.Table.t -> Report.qu
   List.iter (fun f -> prerr_endline (string_of_formula f)) test1;
   prerr_endline "test2";
 *)
-(*  let (s, vc_query, formulae)  = generate_vc query global (inputof, outputof) dug_bp in*)
-  (*let _ = prerr_endline "Formula list" in
-  let _ = List.iter (fun f -> prerr_endline (string_of_formula f)) formulae in*)
   (if verified then prerr_endline "TRUE SATISFIED - FALSE ALARM"
   else prerr_endline "FALSE - DUNNO");
   verified
