@@ -324,6 +324,7 @@ let get_locset mem =
 let get_spec global = 
   let locset = get_locset global.mem in
   let locset_fs = PartialFlowSensitivity.select global locset in
+  let _ = prerr_endline (PowLoc.to_string locset_fs) in
   let unsound_lib = UnsoundLib.collect global in
   let unsound_update = (!Options.opt_bugfinder >= 2) in
   let unsound_bitwise = (!Options.opt_bugfinder >= 1) in

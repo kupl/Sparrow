@@ -31,6 +31,8 @@ let opt_pfs_wv = ref
    42.647897970881758 100.0 -100.0 -100.0 32.564292030707847 
    98.370519929542738 100.0 100.0 -100.0 -100.0"
 
+let opt_pfs_formula = ref false
+
 (* Octagon Analysis *)
 let opt_oct = ref false
 let opt_pack_impact = ref true
@@ -95,6 +97,7 @@ let opts =
   ("-inline_size", (Arg.Int (fun x -> opt_inline_size := x)), "Size constraint for function inline");
   ("-pfs", (Arg.Int (fun x -> opt_pfs := x)), "Partial flow-sensitivity -pfs [0-100] (0: flow-insensitive, 100: fully flow-sensitive). default=100");
   ("-pfs_wv", (Arg.String (fun s -> opt_pfs_wv := s)), "Weight vector for flow-sensitivity (e.g., \"0 1 -1 ... \"). Unspecified weights are zeros.");
+  ("-pfs_formula", (Arg.Set opt_pfs_formula), "Partial flow-sensitivity based on boolean formula");
   ("-oct", (Arg.Set opt_oct), "Do octagon analysis");
   ("-smt", (Arg.Set opt_smt), "Do SMT-based alarm verification");
   ("-profile", (Arg.Set opt_profile), "Profiler");

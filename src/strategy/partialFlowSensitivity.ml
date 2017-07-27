@@ -705,10 +705,72 @@ let take_top : int -> Loc.t list -> PowLoc.t
   let _end = x * len / 100 in
   PowLoc.of_list (BatList.take _end loclist)
 
+let get_locs : int -> feature -> locset 
+= fun idx feature -> prerr_endline (string_of_int idx);
+  match idx with
+  | 1   -> feature.gvars
+  | 2   -> feature.lvars
+  | 3   -> feature.lvars_in_G
+  | 4   -> feature.fields 
+  | 5   -> feature.allocsites
+  | 6   -> feature.ext_allocsites
+  | 7   -> feature.single_defs 
+  | 8   -> feature.assign_const
+  | 9   -> feature.assign_sizeof 
+  | 10  -> feature.prune_simple
+  | 11  -> feature.prune_by_const
+  | 12  -> feature.prune_by_var
+  | 13  -> feature.prune_by_not
+  | 14  -> feature.pass_to_alloc
+  | 15  -> feature.pass_to_alloc2
+  | 16  -> feature.pass_to_alloc_clos
+  | 17  -> feature.pass_to_realloc
+  | 18  -> feature.pass_to_realloc2
+  | 19  -> feature.pass_to_realloc_clos
+  | 20  -> feature.pass_to_buf
+  | 21  -> feature.return_from_alloc
+  | 22  -> feature.return_from_alloc2
+  | 23  -> feature.return_from_alloc_clos
+  | 24  -> feature.return_from_realloc
+  | 25  -> feature.return_from_realloc2
+  | 26  -> feature.return_from_realloc_clos
+  | 27  -> feature.inc_itself_by_one
+  | 28  -> feature.inc_itself_by_var
+  | 29  -> feature.incptr_itself_by_one
+  | 30  -> feature.inc_itself_by_const 
+  | 31  -> feature.incptr_itself_by_const
+  | 32  -> feature.inc
+  | 33  -> feature.dec
+  | 34  -> feature.dec_itself
+  | 35  -> feature.dec_itself_by_const
+  | 36  -> feature.mul_itself_by_const
+  | 37  -> feature.mul_itself_by_var
+  | 38  -> feature.used_as_array_index
+  | 39  -> feature.used_as_array_buf
+  | 40  -> feature.mod_in_rec_fun
+  | 41  -> feature.return_from_ext_fun
+  | 42  -> feature.mod_inside_loops 
+  | 43  -> feature.used_inside_loops
+
+let select_with_formula : Global.t -> PowLoc.t -> PowLoc.t
+= fun global locset -> 
+  let formula = [ [1]; [2]; [5] ] in
+  let feature = extract_feature global locset in
+    list_fold (fun clause set ->
+      let fun_clause =  (* functions represented by the clause *)
+        list_fold (fun atom -> 
+          if atom > 0 then PowLoc.inter (get_locs atom feature)
+          else PowLoc.inter (PowLoc.diff locset (get_locs (-atom) feature)) (* negation *)
+        ) clause locset in
+       PowLoc.union fun_clause set 
+      ) formula PowLoc.empty
+
 let select : Global.t -> PowLoc.t -> PowLoc.t 
 = fun global locset ->
-  if !Options.opt_pfs >= 100 then locset
-  else if !Options.opt_pfs <= 0 then PowLoc.empty
+  if !Options.opt_pfs_formula then select_with_formula global locset 
   else
-    rank global locset
-    |> take_top !Options.opt_pfs
+    if !Options.opt_pfs >= 100 then locset
+    else if !Options.opt_pfs <= 0 then PowLoc.empty
+    else
+      rank global locset
+      |> take_top !Options.opt_pfs

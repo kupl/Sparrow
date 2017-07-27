@@ -23,6 +23,7 @@ val opt_inline : string list ref
 val opt_inline_size : int ref
 val opt_pfs : int ref
 val opt_pfs_wv : string ref
+val opt_pfs_formula : bool ref
 
 (** {2 Octagon Analysis } *)
 
