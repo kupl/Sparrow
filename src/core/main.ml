@@ -58,7 +58,7 @@ let finish t0 () =
   if !Options.opt_pfs_formula <> "" then
     let open Yojson.Basic.Util in
     let assocs = (Yojson.Basic.from_file "output.json") |> to_assoc in
-    let assocs = `Assoc (("time", `String (string_of_float t))::assocs) in
+    let assocs = `Assoc (("time", `Float t)::assocs) in
     let json_file = open_out "output.json" in
     let () = Yojson.Basic.to_channel json_file assocs in
     close_out json_file;

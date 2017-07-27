@@ -131,7 +131,20 @@ let print : query list -> unit
   prerr_endline ("#bot-involved            : " ^ i2s (BatMap.cardinal bot));
   if !Options.opt_pfs_formula <> "" then
     let open Yojson.Basic.Util in
-    let data = `Assoc [("proven_queries", `List (BatMap.foldi (fun loc _ l -> (`String (CilHelper.s_location loc))::l) proven []))] in
+    let data = 
+      `Assoc [
+        ("proven_queries", 
+          `List (
+            BatSet.to_list(
+              (BatMap.foldi 
+                (fun loc _ s -> BatSet.add (`String (CilHelper.s_location loc)) s) 
+                proven 
+                BatSet.empty
+              )
+            )
+          )
+        )
+      ] in
     let json_file = open_out "output.json" in
     let () = Yojson.Basic.to_channel json_file data in
     close_out json_file;
