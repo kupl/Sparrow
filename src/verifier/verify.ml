@@ -223,6 +223,7 @@ let rec make_bp : Report.query -> DFATable.node BatSet.t -> formula list list ->
   else let nodes = nodes in
   *)
 
+(* Generate Basic Paths - TOO specific... Need to modify it into general form *)
 let rec make_bp : InterCfg.node -> Report.query -> Global.t -> DUGraph.t -> InterCfg.node BatSet.t -> formula list -> formula list
 = fun node query global dug workset formulae ->
   let nodes = workset in
