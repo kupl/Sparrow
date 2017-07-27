@@ -115,6 +115,7 @@ let display_alarms title alarms_part =
 let print : query list -> unit
 =fun queries ->
   let all = partition queries in
+  let proven = partition (get queries Proven) in
   let unproven = partition (get queries UnProven) in
   let bot = partition (get queries BotAlarm) in
   if not !Options.opt_noalarm then
@@ -127,7 +128,10 @@ let print : query list -> unit
   prerr_endline ("#queries mod alarm point : " ^ i2s (BatMap.cardinal all));
   prerr_endline ("#proven                  : " ^ i2s (BatSet.cardinal (get_proved_query_point queries)));
   prerr_endline ("#unproven                : " ^ i2s (BatMap.cardinal unproven));
-  prerr_endline ("#bot-involved            : " ^ i2s (BatMap.cardinal bot))
+  prerr_endline ("#bot-involved            : " ^ i2s (BatMap.cardinal bot));
+  if !Options.opt_pfs_formula <> "" then
+    BatMap.iter (fun loc _ -> prerr_string (CilHelper.s_location loc ^ " ")) proven   
+  else ()
     
 
 let print_raw : bool -> query list -> unit
