@@ -54,7 +54,16 @@ let print_cfg : Global.t -> Global.t
 let finish t0 () = 
   my_prerr_endline "Finished properly.";
   Profiler.report stdout;
-  my_prerr_endline (string_of_float (Sys.time () -. t0))
+  let t = Sys.time () -. t0 in
+  if !Options.opt_pfs_formula <> "" then
+    let open Yojson.Basic.Util in
+    let assocs = (Yojson.Basic.from_file "output.json") |> to_assoc in
+    let assocs = `Assoc (("time", `String (string_of_float t))::assocs) in
+    let json_file = open_out "output.json" in
+    let () = Yojson.Basic.to_channel json_file assocs in
+    close_out json_file;
+  else ();
+  my_prerr_endline (string_of_float (t))
 
 let octagon_analysis : Global.t * ItvAnalysis.Table.t * ItvAnalysis.Table.t * Report.query list -> Report.query list
 = fun (global,itvinputof,_,_) -> 
