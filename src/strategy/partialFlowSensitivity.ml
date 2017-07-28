@@ -707,7 +707,7 @@ let take_top : int -> Loc.t list -> PowLoc.t
   PowLoc.of_list (BatList.take _end loclist)
 
 let get_locs : int -> feature -> locset 
-= fun idx feature -> prerr_endline (string_of_int idx);
+= fun idx feature -> 
   match idx with
   | 1   -> feature.gvars
   | 2   -> feature.lvars
