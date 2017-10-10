@@ -26,3 +26,6 @@ val string_of_query : query -> string
 val partition : query list -> (part_unit, query list) BatMap.t
 val get : query list -> status -> query list
 val print : query list -> unit
+
+val get_unique_query : query list -> query list
+val pid_partition : query list -> (InterCfg.Proc.t, query list) BatMap.t

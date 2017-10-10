@@ -54,6 +54,8 @@ val add_call_edge : Node.t -> Proc.t -> t -> t
 val get_callees : Node.t -> t -> ProcSet.t
 val is_undef : pid -> t -> bool
 
+val is_smt : t -> Node.t -> bool
+val is_negate : t -> Node.t -> Node.t -> bool
 
 val remove_function : pid -> t -> t
 val remove_node : node -> t -> t

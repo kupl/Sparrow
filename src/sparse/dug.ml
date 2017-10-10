@@ -39,6 +39,7 @@ sig
   val add_abslocs       : node -> PowLoc.t -> node -> t -> t
 
   val project           : t -> node BatSet.t -> t
+  val dug_merge         : t -> node BatSet.t -> t
 
 (** {2 Iterator } *)
 
@@ -62,9 +63,9 @@ struct
   type locset = PowLoc.t
   module G = 
   struct
-    module I = Graph.Imperative.Digraph.ConcreteBidirectional (BasicDom.Node)
+    module I = Graph.Persistent.Digraph.ConcreteBidirectional (BasicDom.Node)
     type t = { graph : I.t; label : ((node * node), locset) Hashtbl.t }
-    let create ~size () = { graph = I.create ~size (); label = Hashtbl.create (2 * size) }
+    let create ~size () = { graph = I.empty; label = Hashtbl.create (2 * size) }
    
     let succ g n = I.succ g.graph n
     let pred g n = I.pred g.graph n
@@ -75,12 +76,15 @@ struct
     let iter_edges f g = I.iter_edges f g.graph
     let fold_succ f g a = I.fold_succ f g.graph a
 
-    let remove_vertex g n = I.remove_vertex g.graph n; g
-    let add_edge g s d = I.add_edge g.graph s d; g
+    let remove_vertex g n = { graph = I.remove_vertex g.graph n; label = g.label }
+    let add_edge g s d = { graph = I.add_edge g.graph s d; label = g.label }
     let add_edge_e g (s,locs,d) = 
-      Hashtbl.replace g.label (s,d) locs;
+      Hashtbl.replace g.label (s, d) locs;
       add_edge g s d
-    let remove_edge g s d = I.remove_edge g.graph s d; Hashtbl.remove g.label (s,d); g
+      
+    let remove_edge g s d = 
+      Hashtbl.remove g.label (s,d);
+      { graph = I.remove_edge g.graph s d; label = g.label }
     let find_label g s d = Hashtbl.find g.label (s,d)
     let modify_edge_def def g s d f = 
       try 
@@ -108,7 +112,7 @@ struct
   =fun src dst dug -> G.add_edge dug src dst
 
   let remove_edge : node -> node -> t -> t
-  =fun src dst dug -> try G.remove_edge dug src dst with _ -> dug
+  =fun src dst dug -> G.remove_edge dug src dst
 
   let get_abslocs : node -> node -> t -> locset
   =fun src dst dug -> try G.find_label dug src dst with _ -> PowLoc.empty
@@ -127,11 +131,17 @@ struct
     if PowLoc.is_empty xs then dug else
     G.modify_edge_def xs dug src dst (PowLoc.union xs)
 
- 
   let fold_node = G.fold_vertex
   let fold_edges = G.fold_edges
   let iter_edges = G.iter_edges
   let fold_succ = G.fold_succ 
+
+  let dug_merge : t -> node BatSet.t -> t
+  = fun dug nodes ->
+    let dug = fold_edges (fun src dst dug ->
+      if BatSet.mem src nodes && not (BatSet.mem dst nodes) then add_edge src dst dug
+      else dug
+    ) dug dug in dug
 
   let project : t -> node BatSet.t -> t
   =fun dug nodes -> 

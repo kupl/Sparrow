@@ -50,6 +50,27 @@ let partition : query list -> (part_unit, query list) BatMap.t
       BatMap.add q.loc (q::p_als) m
   ) queries BatMap.empty
 
+let get_unique_query : query list -> query list
+= fun queries ->
+  let part_query = partition queries in
+  let query_list = BatMap.fold (
+    fun q_l l -> 
+      let tmp_list = List.fold_left (
+        fun new_list q -> 
+          let exp_list = List.map (fun f -> f.exp) new_list in
+          if List.mem q.exp exp_list then new_list
+          else q::new_list) [] q_l in
+      List.append tmp_list l) part_query [] in
+  query_list
+
+let pid_partition : query list -> (InterCfg.Proc.t, query list) BatMap.t
+= fun queries ->
+  list_fold (fun q m ->
+    let n_pid = InterCfg.Node.get_pid q.node in
+    let p_als = try BatMap.find n_pid m with _ -> [] in
+      BatMap.add n_pid (q::p_als) m
+  ) queries BatMap.empty
+
 let sort_queries : query list -> query list = 
 fun queries ->
   List.sort (fun a b -> 

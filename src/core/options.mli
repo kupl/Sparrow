@@ -32,6 +32,7 @@ val opt_pack_manual : bool ref
 
 (** {2 SMT Analysis } *)
 val opt_smt : bool ref
+val smt_depth :  int ref
 
 (** {2 Unsoundness } *)
 

@@ -32,6 +32,7 @@ sig
   val add_abslocs       : node -> PowLoc.t -> node -> t -> t
 
   val project           : t -> node BatSet.t -> t
+  val dug_merge         : t -> node BatSet.t -> t
 
 (** {2 Iterator } *)
 

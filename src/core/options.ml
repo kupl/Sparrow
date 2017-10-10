@@ -38,6 +38,7 @@ let opt_pack_manual = ref false
 
 (* SMT verification *)
 let opt_smt = ref false
+let smt_depth = ref 5     (*Default value is 5*)
 
 (* Analyzer *)
 let opt_nobar = ref false
@@ -97,6 +98,7 @@ let opts =
   ("-pfs_wv", (Arg.String (fun s -> opt_pfs_wv := s)), "Weight vector for flow-sensitivity (e.g., \"0 1 -1 ... \"). Unspecified weights are zeros.");
   ("-oct", (Arg.Set opt_oct), "Do octagon analysis");
   ("-smt", (Arg.Set opt_smt), "Do SMT-based alarm verification");
+  ("-depth", (Arg.Int (fun x -> smt_depth := x)), "SMT DUG size for verification" );
   ("-profile", (Arg.Set opt_profile), "Profiler");
   ("-narrow", (Arg.Set opt_narrow), "Do narrowing");
   ("-unsound_loop", (Arg.String (fun s -> opt_unsound_loop := BatSet.add s !opt_unsound_loop)), "Unsound loops");

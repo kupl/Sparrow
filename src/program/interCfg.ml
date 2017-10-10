@@ -111,6 +111,20 @@ let nodesof : t -> Node.t list
         (List.map (fun n -> Node.make pid n) (IntraCfg.nodesof cfg))
   ) g.cfgs []
 
+let is_negate : t -> Node.t -> Node.t -> bool   (*needs to be fixed *)
+= fun g n1 n2 ->
+  match cmdof g n1, cmdof g n2 with 
+  | Cassume (e1, loc1), Cassume (e2, loc2) ->
+    if loc1 = loc2 then true
+    else false
+  | _ -> false
+
+let is_smt : t-> Node.t -> bool
+= fun g node -> 
+  match cmdof g node with
+  | Csmt _ -> true
+  | _ -> false
+
 let pidsof : t -> pid list
 =fun g ->
   BatMap.foldi (fun pid _ acc -> pid :: acc) g.cfgs []

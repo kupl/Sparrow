@@ -33,12 +33,12 @@ module NGraph = struct
     let equal = ( = )
   end
 
-  module G = Graph.Imperative.Digraph.Concrete (Node)
+  module G = Graph.Persistent.Digraph.Concrete (Node)
   include G
   include Graph.Components.Make (G)
-  let add_edge g s d = add_edge g s d; g
-  let remove_edge g s d = remove_edge g s d; g
-  let empty size = create ~size:size ()
+  let add_edge g s d = add_edge g s d
+  let remove_edge g s d = remove_edge g s d
+  let empty size = empty
 end 
 
 module Make (DUGraph : Dug.S) = struct

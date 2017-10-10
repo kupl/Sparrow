@@ -65,6 +65,7 @@ module Cmd = struct
   | Csalloc of lval * string * location
   | Cfalloc of lval * fundec * location
   | Cassume of exp * location
+  | Csmt of exp * exp list * location
   | Ccall of lval option * exp * exp list * location 
   | Creturn of exp option * location
   | Casm of attributes * string list * 
@@ -102,6 +103,7 @@ module Cmd = struct
     | Creturn (None,_) -> "return" 
     | Cif (e,b1,b2,loc) -> "if"
     | Cassume (e,loc) -> "assume(" ^ s_exp e ^ ")"
+    | Csmt (f, e, loc) -> "sparrow_smt(" ^ s_exps e ^ ")"
     | CLoop _ -> "loop"
     | Casm _ -> "asm"
     | Cskip -> "skip"
@@ -117,6 +119,7 @@ module Cmd = struct
     | Ccall (_,_,_,l) -> l
     | Creturn (_,l) -> l
     | Cassume (_,l) -> l
+    | Csmt (_, _, l) -> l
     | _ -> Cil.locUnknown
 
 end
@@ -347,6 +350,8 @@ let flatten_instructions : t -> t
         List.map (fun i ->
           match i with
           | Set (lv,e,loc) -> Cmd.Cset (lv,e,loc)
+          | Call (lvo, Cil.Lval (Cil.Var f, Cil.NoOffset), args, loc) when f.vname = "sparrow_smt" ->
+            Cmd.Csmt (Cil.Lval (Cil.Var f, Cil.NoOffset), args,loc)
           | Call (lvo,f,args,loc) -> Cmd.Ccall (lvo,f,args,loc)
           | Asm (a,b,c,d,e,f) -> Cmd.Casm (a,b,c,d,e,f)
         ) instrs in
@@ -580,6 +585,15 @@ let transform_string_allocs : Cil.fundec -> t -> t
             let g = add_cmd last_node cmd g in
             let g = add_edge node last_node g in
               replace_node_graph n empty_node last_node g)
+      | Cmd.Csmt (f, el, loc) ->
+        let (e, l) = replace_str (List.hd el) in
+        let (empty_node, last_node) = (Node.make (), Node.make ()) in
+        let g = add_cmd empty_node Cmd.Cskip g in
+        let cmd = Cmd.Csmt (f, [e], loc) in
+        let g = add_cmd last_node cmd g in
+        let g = add_edge empty_node last_node g in
+        replace_node_graph n empty_node last_node g
+
         (* do not allocate memory cells for arguments of external lib calls *)
       | Cmd.Ccall (lv, Cil.Lval (Cil.Var f, Cil.NoOffset), el, loc) 
         when f.vstorage = Cil.Extern && not (List.mem f.vname targets) -> g

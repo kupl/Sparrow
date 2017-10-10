@@ -381,7 +381,6 @@ let model_assign mode spec pid (lvo,exps) (mem, global) =
       (update mode spec global (eval_lv ~spec pid lv mem) (eval ~spec pid e mem) mem, global)
   | (_, _) -> (mem,global)
 
-
 let model_strlen mode spec pid (lvo, exps) (mem, global) =
   match (lvo, exps) with
   | (Some lv, str::_) ->
@@ -456,7 +455,7 @@ let sparrow_opt mode spec pid exps (mem,global) =
 
 let model_unknown mode spec node pid lvo f exps (mem, global) = 
   match lvo with 
-    None -> (mem, global)
+  | None -> (mem,global)
   | Some lv when Cil.isArithmeticType (Cil.unrollTypeDeep (Cil.typeOfLval lv)) -> 
       let ext_v = if CilHelper.is_unsigned (Cil.unrollTypeDeep (Cil.typeOfLval lv)) then 
                     Val.of_itv Itv.nat 
@@ -711,6 +710,10 @@ let run : update_mode -> Spec.t -> Node.t -> Mem.t * Global.t -> Mem.t * Global.
     |> (fun mem -> (mem, global))
   | IntraCfg.Cmd.Cskip -> (mem, global)  
   | IntraCfg.Cmd.Casm _ -> (mem, global)    (* Not supported *)
+  | IntraCfg.Cmd.Csmt (Cil.Lval f, el, loc) ->
+    let e = List.hd el in
+    let _ = eval ~spec pid e mem in
+    (mem, global)
   | _ -> invalid_arg "itvSem.ml: run_cmd" 
 
 let initial _ = Mem.bot

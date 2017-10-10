@@ -30,6 +30,7 @@ module Cmd : sig
   | Csalloc of Cil.lval * string * Cil.location
   | Cfalloc of Cil.lval * Cil.fundec * Cil.location
   | Cassume of Cil.exp * Cil.location
+  | Csmt of Cil.exp * Cil.exp list * Cil.location
   | Ccall of Cil.lval option * Cil.exp * Cil.exp list * Cil.location 
   | Creturn of Cil.exp option * Cil.location
   | Casm of Cil.attributes * string list * 
